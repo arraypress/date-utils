@@ -1,0 +1,68 @@
+# @arraypress/date-utils
+
+Date utilities for dashboards and admin UIs — range presets, period formatting, and display formatting. Not a date library replacement — just the handful of functions every analytics dashboard needs.
+
+Zero dependencies. Uses native `Date` and `Intl`. Works in any JS runtime.
+
+## Installation
+
+```bash
+npm install @arraypress/date-utils
+```
+
+## Usage
+
+```js
+import { getDateRange, getGroupBy, formatPeriod, shortDate, dateTime, relativeTime } from '@arraypress/date-utils';
+
+// Date range presets for report filters
+getDateRange('7d')     // { from: '2026-03-17T00:00:00Z', to: '2026-03-24T23:59:59Z' }
+getDateRange('ytd')    // { from: '2026-01-01T00:00:00Z', to: '2026-03-24T23:59:59Z' }
+getDateRange('all')    // { from: null, to: null }
+getDateRange('custom', { from: '2026-01-01', to: '2026-02-28' })
+
+// Auto-select chart granularity
+getGroupBy('7d')       // 'day'
+getGroupBy('90d')      // 'week'
+getGroupBy('ytd')      // 'month'
+
+// Format chart axis labels
+formatPeriod('2026-03-24', 'day')    // 'Mar 24'
+formatPeriod('2026-03', 'month')     // 'Mar 2026'
+formatPeriod('2026-12', 'week')      // 'W12'
+
+// Display formatting
+shortDate('2026-03-24T10:30:00Z')    // 'Mar 24, 2026'
+dateTime('2026-03-24T10:30:00Z')     // 'Mar 24, 2026, 10:30'
+relativeTime('2026-03-24T08:00:00Z') // '2 hours ago'
+```
+
+## API
+
+### `getDateRange(preset, custom?)`
+
+Get `{ from, to }` ISO strings for a named preset: `'today'`, `'7d'`, `'30d'`, `'90d'`, `'ytd'`, `'all'`, or `'custom'`.
+
+### `getGroupBy(preset)`
+
+Get the recommended chart granularity (`'day'`, `'week'`, or `'month'`) for a date preset.
+
+### `formatPeriod(period, groupBy)`
+
+Format a SQL GROUP BY period string for chart axis labels.
+
+### `shortDate(dateStr)`
+
+Format as `'Mar 24, 2026'`.
+
+### `dateTime(dateStr)`
+
+Format as `'Mar 24, 2026, 10:30'`.
+
+### `relativeTime(dateStr)`
+
+Format as `'2 hours ago'`, `'3 days ago'`, `'just now'`, etc.
+
+## License
+
+MIT
