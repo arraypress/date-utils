@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { getDateRange, getGroupBy, formatPeriod, shortDate, dateTime, relativeTime } from '../src/index.js';
+import { getDateRange, getGroupBy, formatPeriod, unixToDatetime, datetimeToUnix, shortDate, dateTime, relativeTime } from '../src/index.js';
 
 // ── getDateRange ────────────────────────────
 
@@ -87,6 +87,30 @@ describe('formatPeriod', () => {
   it('week format — W01', () => assert.equal(formatPeriod('2026-01', 'week'), 'W01'));
   it('empty → empty', () => assert.equal(formatPeriod('', 'day'), ''));
   it('null → empty', () => assert.equal(formatPeriod(null, 'day'), ''));
+});
+
+// ── unixToDatetime ─────────────────────────
+
+describe('unixToDatetime', () => {
+  it('converts unix timestamp', () => assert.equal(unixToDatetime(1700000000), '2023-11-14 22:13:20'));
+  it('converts epoch', () => assert.equal(unixToDatetime(1), '1970-01-01 00:00:01'));
+  it('null → null', () => assert.equal(unixToDatetime(null), null));
+  it('undefined → null', () => assert.equal(unixToDatetime(undefined), null));
+  it('zero → null', () => assert.equal(unixToDatetime(0), null));
+});
+
+// ── datetimeToUnix ─────────────────────────
+
+describe('datetimeToUnix', () => {
+  it('converts SQL datetime', () => assert.equal(datetimeToUnix('2023-11-14 22:13:20'), 1700000000));
+  it('converts ISO string', () => assert.equal(datetimeToUnix('2023-11-14T22:13:20Z'), 1700000000));
+  it('null → null', () => assert.equal(datetimeToUnix(null), null));
+  it('empty → null', () => assert.equal(datetimeToUnix(''), null));
+  it('invalid → null', () => assert.equal(datetimeToUnix('not-a-date'), null));
+  it('roundtrips with unixToDatetime', () => {
+    const ts = 1700000000;
+    assert.equal(datetimeToUnix(unixToDatetime(ts)), ts);
+  });
 });
 
 // ── shortDate ───────────────────────────────

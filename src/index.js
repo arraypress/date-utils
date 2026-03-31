@@ -141,6 +141,47 @@ export function formatPeriod(period, groupBy) {
   return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
 
+// ── Timestamp Conversion ──────────────────────
+
+/**
+ * Convert a Unix timestamp (seconds) to a SQL-friendly datetime string.
+ *
+ * Returns format `YYYY-MM-DD HH:MM:SS` (UTC), suitable for SQLite,
+ * MySQL, and other databases.
+ *
+ * @param {number} ts - Unix timestamp in seconds.
+ * @returns {string|null} Datetime string, or null if input is falsy.
+ *
+ * @example
+ * unixToDatetime(1700000000)   // '2023-11-14 22:13:20'
+ * unixToDatetime(0)            // null
+ * unixToDatetime(null)         // null
+ */
+export function unixToDatetime(ts) {
+  if (!ts) return null;
+  return new Date(ts * 1000).toISOString().replace('T', ' ').slice(0, 19);
+}
+
+/**
+ * Convert a SQL datetime string to a Unix timestamp (seconds).
+ *
+ * Accepts ISO strings or `YYYY-MM-DD HH:MM:SS` format.
+ *
+ * @param {string} dateStr - Datetime string.
+ * @returns {number|null} Unix timestamp in seconds, or null if invalid.
+ *
+ * @example
+ * datetimeToUnix('2023-11-14 22:13:20')    // 1700000000
+ * datetimeToUnix('2023-11-14T22:13:20Z')   // 1700000000
+ * datetimeToUnix(null)                      // null
+ */
+export function datetimeToUnix(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  const d = new Date(dateStr.includes('Z') || dateStr.includes('+') ? dateStr : dateStr + 'Z');
+  if (isNaN(d.getTime())) return null;
+  return Math.floor(d.getTime() / 1000);
+}
+
 // ── Display Formatting ──────────────────────
 
 /**

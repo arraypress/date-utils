@@ -13,7 +13,7 @@ npm install @arraypress/date-utils
 ## Usage
 
 ```js
-import { getDateRange, getGroupBy, formatPeriod, shortDate, dateTime, relativeTime } from '@arraypress/date-utils';
+import { getDateRange, getGroupBy, formatPeriod, unixToDatetime, datetimeToUnix, shortDate, dateTime, relativeTime } from '@arraypress/date-utils';
 
 // Date range presets for report filters
 getDateRange('7d')     // { from: '2026-03-17T00:00:00Z', to: '2026-03-24T23:59:59Z' }
@@ -30,6 +30,10 @@ getGroupBy('ytd')      // 'month'
 formatPeriod('2026-03-24', 'day')    // 'Mar 24'
 formatPeriod('2026-03', 'month')     // 'Mar 2026'
 formatPeriod('2026-12', 'week')      // 'W12'
+
+// Unix timestamp conversion (for databases)
+unixToDatetime(1700000000)           // '2023-11-14 22:13:20'
+datetimeToUnix('2023-11-14 22:13:20') // 1700000000
 
 // Display formatting
 shortDate('2026-03-24T10:30:00Z')    // 'Mar 24, 2026'
@@ -50,6 +54,14 @@ Get the recommended chart granularity (`'day'`, `'week'`, or `'month'`) for a da
 ### `formatPeriod(period, groupBy)`
 
 Format a SQL GROUP BY period string for chart axis labels.
+
+### `unixToDatetime(ts)`
+
+Convert a Unix timestamp (seconds) to a SQL-friendly `'YYYY-MM-DD HH:MM:SS'` string (UTC). Returns `null` for falsy input.
+
+### `datetimeToUnix(dateStr)`
+
+Convert a SQL datetime or ISO string to a Unix timestamp (seconds). Returns `null` for invalid input.
 
 ### `shortDate(dateStr)`
 
