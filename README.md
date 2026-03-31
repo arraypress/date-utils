@@ -16,9 +16,12 @@ npm install @arraypress/date-utils
 import { getDateRange, getGroupBy, formatPeriod, unixToDatetime, datetimeToUnix, shortDate, dateTime, relativeTime } from '@arraypress/date-utils';
 
 // Date range presets for report filters
-getDateRange('7d')     // { from: '2026-03-17T00:00:00Z', to: '2026-03-24T23:59:59Z' }
-getDateRange('ytd')    // { from: '2026-01-01T00:00:00Z', to: '2026-03-24T23:59:59Z' }
-getDateRange('all')    // { from: null, to: null }
+getDateRange('7d')            // { from: '2026-03-17T00:00:00Z', to: '2026-03-24T23:59:59Z' }
+getDateRange('yesterday')     // { from: '2026-03-23T00:00:00Z', to: '2026-03-23T23:59:59Z' }
+getDateRange('this_month')    // { from: '2026-03-01T00:00:00Z', to: '2026-03-24T23:59:59Z' }
+getDateRange('last_quarter')  // { from: '2025-10-01T00:00:00Z', to: '2025-12-31T23:59:59Z' }
+getDateRange('last_year')     // { from: '2025-01-01T00:00:00Z', to: '2025-12-31T23:59:59Z' }
+getDateRange('all')           // { from: null, to: null }
 getDateRange('custom', { from: '2026-01-01', to: '2026-02-28' })
 
 // Auto-select chart granularity
@@ -45,7 +48,9 @@ relativeTime('2026-03-24T08:00:00Z') // '2 hours ago'
 
 ### `getDateRange(preset, custom?)`
 
-Get `{ from, to }` ISO strings for a named preset: `'today'`, `'7d'`, `'30d'`, `'90d'`, `'ytd'`, `'all'`, or `'custom'`.
+Get `{ from, to }` ISO strings for a named preset:
+
+`'today'`, `'yesterday'`, `'7d'`, `'30d'`, `'90d'`, `'this_month'`, `'last_month'`, `'this_quarter'`, `'last_quarter'`, `'ytd'`/`'this_year'`, `'last_year'`, `'all'`, or `'custom'`.
 
 ### `getGroupBy(preset)`
 
