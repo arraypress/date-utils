@@ -1,6 +1,6 @@
 {
   "name": "@arraypress/date-utils",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Date utilities for dashboards — range presets, period formatting, and display formatting.",
   "type": "module",
   "main": "src/index.js",
