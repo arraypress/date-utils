@@ -60,16 +60,81 @@ describe('getDateRange', () => {
     assert.equal(from, null);
     assert.equal(to, null);
   });
+
+  it('yesterday returns previous day', () => {
+    const { from, to } = getDateRange('yesterday');
+    assert.ok(from.endsWith('T00:00:00Z'));
+    assert.ok(to.endsWith('T23:59:59Z'));
+    assert.equal(from.slice(0, 10), to.slice(0, 10));
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    assert.equal(from.slice(0, 10), yesterday.toISOString().slice(0, 10));
+  });
+
+  it('this_month starts on 1st', () => {
+    const { from, to } = getDateRange('this_month');
+    assert.ok(from.endsWith('-01T00:00:00Z'));
+    assert.ok(to.endsWith('T23:59:59Z'));
+  });
+
+  it('last_month returns full previous month', () => {
+    const { from, to } = getDateRange('last_month');
+    assert.ok(from.endsWith('-01T00:00:00Z'));
+    assert.ok(to.endsWith('T23:59:59Z'));
+    // from and to should be in the same month
+    assert.equal(from.slice(0, 7), to.slice(0, 7));
+  });
+
+  it('this_quarter starts on quarter boundary', () => {
+    const { from } = getDateRange('this_quarter');
+    const month = parseInt(from.slice(5, 7), 10);
+    assert.ok([1, 4, 7, 10].includes(month));
+    assert.ok(from.endsWith('-01T00:00:00Z'));
+  });
+
+  it('last_quarter returns full previous quarter', () => {
+    const { from, to } = getDateRange('last_quarter');
+    const fromMonth = parseInt(from.slice(5, 7), 10);
+    assert.ok([1, 4, 7, 10].includes(fromMonth));
+    assert.ok(from.endsWith('-01T00:00:00Z'));
+    assert.ok(to.endsWith('T23:59:59Z'));
+  });
+
+  it('this_year starts Jan 1', () => {
+    const { from } = getDateRange('this_year');
+    assert.ok(from.includes('-01-01T00:00:00Z'));
+  });
+
+  it('this_year equals ytd', () => {
+    const ytd = getDateRange('ytd');
+    const thisYear = getDateRange('this_year');
+    assert.equal(ytd.from, thisYear.from);
+    assert.equal(ytd.to, thisYear.to);
+  });
+
+  it('last_year returns full previous year', () => {
+    const { from, to } = getDateRange('last_year');
+    const year = new Date().getFullYear() - 1;
+    assert.equal(from, `${year}-01-01T00:00:00Z`);
+    assert.equal(to, `${year}-12-31T23:59:59Z`);
+  });
 });
 
 // ── getGroupBy ──────────────────────────────
 
 describe('getGroupBy', () => {
   it('today → day', () => assert.equal(getGroupBy('today'), 'day'));
+  it('yesterday → day', () => assert.equal(getGroupBy('yesterday'), 'day'));
   it('7d → day', () => assert.equal(getGroupBy('7d'), 'day'));
   it('30d → day', () => assert.equal(getGroupBy('30d'), 'day'));
+  it('this_month → day', () => assert.equal(getGroupBy('this_month'), 'day'));
+  it('last_month → day', () => assert.equal(getGroupBy('last_month'), 'day'));
   it('90d → week', () => assert.equal(getGroupBy('90d'), 'week'));
+  it('this_quarter → week', () => assert.equal(getGroupBy('this_quarter'), 'week'));
+  it('last_quarter → week', () => assert.equal(getGroupBy('last_quarter'), 'week'));
   it('ytd → month', () => assert.equal(getGroupBy('ytd'), 'month'));
+  it('this_year → month', () => assert.equal(getGroupBy('this_year'), 'month'));
+  it('last_year → month', () => assert.equal(getGroupBy('last_year'), 'month'));
   it('all → month', () => assert.equal(getGroupBy('all'), 'month'));
   it('custom → month', () => assert.equal(getGroupBy('custom'), 'month'));
 });

@@ -1,4 +1,4 @@
-export type Preset = 'today' | '7d' | '30d' | '90d' | 'ytd' | 'all' | 'custom';
+export type Preset = 'today' | 'yesterday' | '7d' | '30d' | '90d' | 'ytd' | 'this_month' | 'last_month' | 'this_quarter' | 'last_quarter' | 'this_year' | 'last_year' | 'all' | 'custom';
 export type GroupBy = 'day' | 'week' | 'month';
 
 export interface DateRange {

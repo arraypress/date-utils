@@ -20,44 +20,87 @@
  * Returns `{ from, to }` as ISO strings, or null values for 'all'.
  * Useful for report filters, analytics dashboards, and date pickers.
  *
- * @param {'today'|'7d'|'30d'|'90d'|'ytd'|'all'|'custom'} preset - The preset name.
+ * @param {'today'|'yesterday'|'7d'|'30d'|'90d'|'ytd'|'this_month'|'last_month'|'this_quarter'|'last_quarter'|'this_year'|'last_year'|'all'|'custom'} preset - The preset name.
  * @param {{ from?: string, to?: string }} [custom] - Custom date strings (YYYY-MM-DD) when preset is 'custom'.
  * @returns {{ from: string|null, to: string|null }}
  *
  * @example
- * getDateRange('7d')      // { from: '2026-03-17T00:00:00Z', to: '2026-03-24T23:59:59Z' }
- * getDateRange('ytd')     // { from: '2026-01-01T00:00:00Z', to: '2026-03-24T23:59:59Z' }
- * getDateRange('all')     // { from: null, to: null }
+ * getDateRange('7d')           // { from: '2026-03-17T00:00:00Z', to: '2026-03-24T23:59:59Z' }
+ * getDateRange('yesterday')    // { from: '2026-03-23T00:00:00Z', to: '2026-03-23T23:59:59Z' }
+ * getDateRange('this_month')   // { from: '2026-03-01T00:00:00Z', to: '2026-03-24T23:59:59Z' }
+ * getDateRange('last_quarter') // { from: '2025-10-01T00:00:00Z', to: '2025-12-31T23:59:59Z' }
+ * getDateRange('all')          // { from: null, to: null }
  * getDateRange('custom', { from: '2026-01-01', to: '2026-02-28' })
  */
 export function getDateRange(preset, custom = {}) {
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
+  const startOf = (d) => `${d.toISOString().slice(0, 10)}T00:00:00Z`;
+  const endOf = (d) => `${d.toISOString().slice(0, 10)}T23:59:59Z`;
+  const pad = (n) => String(n).padStart(2, '0');
 
   switch (preset) {
     case 'today':
       return { from: `${today}T00:00:00Z`, to: `${today}T23:59:59Z` };
 
+    case 'yesterday': {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 1);
+      return { from: startOf(d), to: endOf(d) };
+    }
+
     case '7d': {
       const d = new Date(now);
       d.setDate(d.getDate() - 7);
-      return { from: `${d.toISOString().slice(0, 10)}T00:00:00Z`, to: `${today}T23:59:59Z` };
+      return { from: startOf(d), to: endOf(now) };
     }
 
     case '30d': {
       const d = new Date(now);
       d.setDate(d.getDate() - 30);
-      return { from: `${d.toISOString().slice(0, 10)}T00:00:00Z`, to: `${today}T23:59:59Z` };
+      return { from: startOf(d), to: endOf(now) };
     }
 
     case '90d': {
       const d = new Date(now);
       d.setDate(d.getDate() - 90);
-      return { from: `${d.toISOString().slice(0, 10)}T00:00:00Z`, to: `${today}T23:59:59Z` };
+      return { from: startOf(d), to: endOf(now) };
     }
 
+    case 'this_month':
+      return { from: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01T00:00:00Z`, to: endOf(now) };
+
+    case 'last_month': {
+      const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+      const m = now.getMonth() === 0 ? 12 : now.getMonth();
+      const lastDay = new Date(y, m, 0).getDate();
+      return { from: `${y}-${pad(m)}-01T00:00:00Z`, to: `${y}-${pad(m)}-${lastDay}T23:59:59Z` };
+    }
+
+    case 'this_quarter': {
+      const q = Math.floor(now.getUTCMonth() / 3);
+      const m = q * 3 + 1; // 1-indexed month
+      return { from: `${now.getUTCFullYear()}-${pad(m)}-01T00:00:00Z`, to: endOf(now) };
+    }
+
+    case 'last_quarter': {
+      let q = Math.floor(now.getUTCMonth() / 3) - 1;
+      let y = now.getUTCFullYear();
+      if (q < 0) { q = 3; y--; }
+      const startMonth = q * 3 + 1; // 1-indexed
+      const endMonth = q * 3 + 3;
+      const lastDay = new Date(Date.UTC(y, endMonth, 0)).getUTCDate();
+      return { from: `${y}-${pad(startMonth)}-01T00:00:00Z`, to: `${y}-${pad(endMonth)}-${lastDay}T23:59:59Z` };
+    }
+
+    case 'this_year':
     case 'ytd':
-      return { from: `${now.getFullYear()}-01-01T00:00:00Z`, to: `${today}T23:59:59Z` };
+      return { from: `${now.getFullYear()}-01-01T00:00:00Z`, to: endOf(now) };
+
+    case 'last_year': {
+      const y = now.getFullYear() - 1;
+      return { from: `${y}-01-01T00:00:00Z`, to: `${y}-12-31T23:59:59Z` };
+    }
 
     case 'custom':
       return {
@@ -87,12 +130,19 @@ export function getDateRange(preset, custom = {}) {
 export function getGroupBy(preset) {
   switch (preset) {
     case 'today':
+    case 'yesterday':
     case '7d':
     case '30d':
+    case 'this_month':
+    case 'last_month':
       return 'day';
     case '90d':
+    case 'this_quarter':
+    case 'last_quarter':
       return 'week';
     case 'ytd':
+    case 'this_year':
+    case 'last_year':
     case 'all':
     case 'custom':
     default:
