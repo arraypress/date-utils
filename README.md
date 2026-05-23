@@ -13,7 +13,12 @@ npm install @arraypress/date-utils
 ## Usage
 
 ```js
-import { getDateRange, getGroupBy, formatPeriod, unixToDatetime, datetimeToUnix, shortDate, dateTime, relativeTime } from '@arraypress/date-utils';
+import {
+  getDateRange, getGroupBy, formatPeriod,
+  unixToDatetime, datetimeToUnix,
+  shortDate, dateTime, relativeTime,
+  byDateDesc, byDateAsc, DATE_PRESETS,
+} from '@arraypress/date-utils';
 
 // Date range presets for report filters
 getDateRange('7d')            // { from: '2026-03-17T00:00:00Z', to: '2026-03-24T23:59:59Z' }
@@ -42,6 +47,15 @@ datetimeToUnix('2023-11-14 22:13:20') // 1700000000
 shortDate('2026-03-24T10:30:00Z')    // 'Mar 24, 2026'
 dateTime('2026-03-24T10:30:00Z')     // 'Mar 24, 2026, 10:30'
 relativeTime('2026-03-24T08:00:00Z') // '2 hours ago'
+
+// Sort comparators — Astro CollectionEntry or flat shape
+posts.sort(byDateDesc)                // newest first
+archive.sort(byDateAsc)               // oldest first
+
+// Preset keys — for rendering a select / iterating
+for (const preset of DATE_PRESETS) {
+  console.log(preset, getDateRange(preset));
+}
 ```
 
 ## API
@@ -79,6 +93,19 @@ Format as `'Mar 24, 2026, 10:30'`.
 ### `relativeTime(dateStr)`
 
 Format as `'2 hours ago'`, `'3 days ago'`, `'just now'`, etc.
+
+### `byDateDesc(a, b)` / `byDateAsc(a, b)`
+
+Sort comparators. Drop directly into `Array.prototype.sort`. Accept both Astro `CollectionEntry` shape (`item.data.date`) and flat `{ date }` shape. Both `Date` instances and date-strings work. Items with no date sort to the bottom (`desc`) or top (`asc`).
+
+```js
+posts.sort(byDateDesc)
+[...news].sort(byDateAsc).slice(0, 5)
+```
+
+### `DATE_PRESETS`
+
+Frozen array of every preset key `getDateRange` accepts (`'today'`, `'yesterday'`, `'7d'`, `'30d'`, `'90d'`, `'this_month'`, `'last_month'`, `'this_quarter'`, `'last_quarter'`, `'ytd'`, `'this_year'`, `'last_year'`, `'all'`, `'custom'`). Use to render dropdowns or iterate without duplicating the literal.
 
 ## License
 

@@ -317,3 +317,101 @@ export function relativeTime(dateStr) {
   if (years === 1) return '1 year ago';
   return `${years} years ago`;
 }
+
+// ── Sort comparators ────────────────────────
+
+/**
+ * Resolve a Date out of an item-shaped input. Accepts either an
+ * `Astro CollectionEntry` (where the date lives on `item.data.date`)
+ * or a flat record with a top-level `date` field. Returns a number
+ * (ms since epoch) so sort callbacks can subtract directly. Items
+ * with no date fall to `0` so they sort to the bottom in `desc`
+ * mode and to the top in `asc` mode — usually what you want when
+ * draft/unpublished entries leak into a published-only list.
+ *
+ * @private
+ * @param {*} item
+ * @returns {number}
+ */
+function _resolveDate(item) {
+  if (!item) return 0;
+  /* CollectionEntry shape: { data: { date: Date | string } } */
+  if (item.data && item.data.date) {
+    const d = item.data.date instanceof Date ? item.data.date : new Date(item.data.date);
+    return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+  }
+  /* Flat shape: { date: Date | string } */
+  if (item.date) {
+    const d = item.date instanceof Date ? item.date : new Date(item.date);
+    return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+  }
+  return 0;
+}
+
+/**
+ * Sort comparator — DESCENDING (newest first). Drop into any
+ * `Array.prototype.sort` call where you want the most-recent item
+ * at index 0. Accepts both the Astro `CollectionEntry` shape
+ * (date at `data.date`) and the flat `{ date }` shape. Items with
+ * no date sort to the bottom.
+ *
+ * Replaces the recurring inline expression
+ * `(a, b) => b.data.date.getTime() - a.data.date.getTime()`.
+ *
+ * @param {*} a - First item.
+ * @param {*} b - Second item.
+ * @returns {number} Negative if `a` is newer, positive if `b` is newer.
+ *
+ * @example
+ * posts.sort(byDateDesc)
+ * news.toSorted(byDateDesc).slice(0, 5)  // top 5 most recent
+ */
+export function byDateDesc(a, b) {
+  return _resolveDate(b) - _resolveDate(a);
+}
+
+/**
+ * Sort comparator — ASCENDING (oldest first). Mirror image of
+ * `byDateDesc`. Items with no date sort to the top.
+ *
+ * @param {*} a - First item.
+ * @param {*} b - Second item.
+ * @returns {number} Negative if `a` is older, positive if `b` is older.
+ *
+ * @example
+ * archive.sort(byDateAsc)
+ */
+export function byDateAsc(a, b) {
+  return _resolveDate(a) - _resolveDate(b);
+}
+
+/**
+ * Every preset key `getDateRange` accepts, frozen as a tuple so
+ * consumers can iterate / type-narrow / render a dropdown without
+ * duplicating the literal list. Order matches typical UI
+ * presentation (most-recent first, all/custom last).
+ *
+ * @example
+ * import { DATE_PRESETS, getDateRange } from '@arraypress/date-utils';
+ *
+ * // Render a select element
+ * for (const preset of DATE_PRESETS) {
+ *   console.log(preset, getDateRange(preset));
+ * }
+ */
+export const DATE_PRESETS = Object.freeze([
+  'today',
+  'yesterday',
+  '7d',
+  '30d',
+  '90d',
+  'this_month',
+  'last_month',
+  'this_quarter',
+  'last_quarter',
+  'ytd',
+  'this_year',
+  'last_year',
+  'all',
+  'custom',
+]);

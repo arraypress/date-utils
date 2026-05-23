@@ -1,6 +1,18 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { getDateRange, getGroupBy, formatPeriod, unixToDatetime, datetimeToUnix, shortDate, dateTime, relativeTime } from '../src/index.js';
+import {
+  getDateRange,
+  getGroupBy,
+  formatPeriod,
+  unixToDatetime,
+  datetimeToUnix,
+  shortDate,
+  dateTime,
+  relativeTime,
+  byDateDesc,
+  byDateAsc,
+  DATE_PRESETS,
+} from '../src/index.js';
 
 // ── getDateRange ────────────────────────────
 
@@ -263,4 +275,88 @@ describe('relativeTime', () => {
 
   it('empty → empty', () => assert.equal(relativeTime(''), ''));
   it('null → empty', () => assert.equal(relativeTime(null), ''));
+});
+
+// ── byDateDesc / byDateAsc ──────────────────
+
+describe('byDateDesc — Astro CollectionEntry shape', () => {
+  const posts = [
+    { id: 'a', data: { date: new Date('2026-01-01') } },
+    { id: 'b', data: { date: new Date('2026-03-01') } },
+    { id: 'c', data: { date: new Date('2026-02-01') } },
+  ];
+
+  it('sorts newest first', () => {
+    const sorted = [...posts].sort(byDateDesc).map((p) => p.id);
+    assert.deepEqual(sorted, ['b', 'c', 'a']);
+  });
+
+  it('items with no date sort to the bottom (desc)', () => {
+    const mixed = [...posts, { id: 'x', data: {} }];
+    const sorted = [...mixed].sort(byDateDesc).map((p) => p.id);
+    assert.equal(sorted[sorted.length - 1], 'x');
+  });
+});
+
+describe('byDateDesc — flat shape', () => {
+  it('uses item.date when item.data is absent', () => {
+    const items = [
+      { id: 'a', date: '2026-01-01' },
+      { id: 'b', date: '2026-03-01' },
+    ];
+    const sorted = [...items].sort(byDateDesc).map((i) => i.id);
+    assert.deepEqual(sorted, ['b', 'a']);
+  });
+});
+
+describe('byDateAsc', () => {
+  const posts = [
+    { id: 'a', data: { date: new Date('2026-01-01') } },
+    { id: 'b', data: { date: new Date('2026-03-01') } },
+    { id: 'c', data: { date: new Date('2026-02-01') } },
+  ];
+
+  it('sorts oldest first', () => {
+    const sorted = [...posts].sort(byDateAsc).map((p) => p.id);
+    assert.deepEqual(sorted, ['a', 'c', 'b']);
+  });
+
+  it('handles string dates equivalently', () => {
+    const items = [
+      { id: 'a', data: { date: '2026-01-01' } },
+      { id: 'b', data: { date: '2026-03-01' } },
+    ];
+    const sorted = [...items].sort(byDateAsc).map((i) => i.id);
+    assert.deepEqual(sorted, ['a', 'b']);
+  });
+
+  it('returns 0 when both items missing dates (stable)', () => {
+    assert.equal(byDateAsc({}, {}), 0);
+  });
+});
+
+// ── DATE_PRESETS ────────────────────────────
+
+describe('DATE_PRESETS', () => {
+  it('exports every preset getDateRange accepts', () => {
+    // Sanity-check the union matches by feeding each through getDateRange.
+    for (const preset of DATE_PRESETS) {
+      if (preset === 'custom') {
+        const r = getDateRange(preset, { from: '2026-01-01', to: '2026-01-31' });
+        assert.ok(r.from && r.to, `${preset} returned a custom range`);
+      } else if (preset === 'all') {
+        const r = getDateRange(preset);
+        assert.equal(r.from, null);
+        assert.equal(r.to, null);
+      } else {
+        const r = getDateRange(preset);
+        assert.ok(r.from, `${preset} returned from`);
+        assert.ok(r.to, `${preset} returned to`);
+      }
+    }
+  });
+
+  it('is frozen', () => {
+    assert.ok(Object.isFrozen(DATE_PRESETS));
+  });
 });

@@ -19,3 +19,35 @@ export function datetimeToUnix(dateStr: string): number | null;
 export function shortDate(dateStr: string): string;
 export function dateTime(dateStr: string): string;
 export function relativeTime(dateStr: string): string;
+
+/**
+ * Item with a date on either `item.data.date` (Astro CollectionEntry
+ * shape) or `item.date` (flat shape). Both `Date` instances and
+ * date-strings are accepted.
+ */
+export interface DatedItem {
+  data?: { date?: Date | string };
+  date?: Date | string;
+}
+
+/**
+ * Sort comparator — DESCENDING (newest first). Drop into `Array.sort`.
+ * Items with no date sort to the bottom.
+ *
+ * @example posts.sort(byDateDesc)
+ */
+export function byDateDesc(a: DatedItem, b: DatedItem): number;
+
+/**
+ * Sort comparator — ASCENDING (oldest first). Items with no date
+ * sort to the top.
+ *
+ * @example archive.sort(byDateAsc)
+ */
+export function byDateAsc(a: DatedItem, b: DatedItem): number;
+
+/**
+ * Every preset key `getDateRange` accepts, frozen. Useful for
+ * rendering a select / iterating without duplicating the union.
+ */
+export const DATE_PRESETS: readonly Preset[];
