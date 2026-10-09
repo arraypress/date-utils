@@ -415,3 +415,19 @@ export const DATE_PRESETS = Object.freeze([
   'all',
   'custom',
 ]);
+
+// ── Calendar periods in a time zone ────────
+
+export {
+  isTimeZone,
+  localDate,
+  startOfLocalDay,
+  addDays,
+  periodStart,
+  nextPeriod,
+  previousPeriod,
+  periodBounds,
+  periodLabel,
+  parseLocalDate,
+  formatLocalDate,
+} from './zoned.js';

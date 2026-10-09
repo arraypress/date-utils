@@ -107,6 +107,41 @@ posts.sort(byDateDesc)
 
 Frozen array of every preset key `getDateRange` accepts (`'today'`, `'yesterday'`, `'7d'`, `'30d'`, `'90d'`, `'this_month'`, `'last_month'`, `'this_quarter'`, `'last_quarter'`, `'ytd'`, `'this_year'`, `'last_year'`, `'all'`, `'custom'`). Use to render dropdowns or iterate without duplicating the literal.
 
+## Calendar periods in a time zone
+
+For sales reports, a "day" is the seller's day, not UTC's. These keep dates
+as local calendar dates (`{ y, m, d }`, `m` 1–12) and turn them into instants
+only at the edges, so a day is a day across daylight saving (23 or 25 hours
+when the clocks change). Time zones come from `Intl`: no table to go stale.
+
+```js
+import { localDate, periodBounds, periodStart, previousPeriod, periodLabel, parseLocalDate } from '@arraypress/date-utils';
+
+const tz = 'Asia/Bangkok';
+const today = localDate(Date.now(), tz);                 // { y: 2026, m: 10, d: 9 }
+
+// This month, as a query range: created_at >= from AND created_at < to
+const { start, from, to } = periodBounds(today, 'month', tz);
+
+// The month before, for "vs last month"
+const before = periodBounds(previousPeriod(start, 'month'), 'month', tz);
+
+periodLabel(periodStart(today, 'week'), 'week');         // '2026-W41' (ISO 8601 weeks, Monday first)
+parseLocalDate('2026-02-30');                            // null: no such day
+```
+
+| | |
+|---|---|
+| `localDate(ms, tz)` | The calendar date an instant falls on. |
+| `startOfLocalDay(date, tz)` | The instant a local midnight happens (unix ms). |
+| `addDays(date, n)` | Calendar arithmetic, no time zone. |
+| `periodStart(date, period)` | First day of its `day`, `week`, `month`, `quarter` or `year`. |
+| `nextPeriod(start, period, count = 1)`, `previousPeriod(start, period)` | Step through periods. |
+| `periodBounds(date, period, tz)` | `{ start, from, to }`, `to` exclusive. |
+| `periodLabel(start, period)` | `2026-10-09`, `2026-W41`, `2026-10`, `2026-Q4`, `2026`. |
+| `parseLocalDate(text)`, `formatLocalDate(date)` | `YYYY-MM-DD`, refusing dates that don't exist. |
+| `isTimeZone(tz)` | Whether the runtime knows the zone. |
+
 ## License
 
 MIT
