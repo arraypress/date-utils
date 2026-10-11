@@ -12,6 +12,8 @@
  * @module @arraypress/date-utils
  */
 
+import { isTimeZone } from './zoned.js';
+
 // ── Date Range Presets ──────────────────────
 
 /**
@@ -244,35 +246,75 @@ function toDate(dateStr) {
 }
 
 /**
+ * A locale the runtime knows, or null for none or an unknown one (so the
+ * caller keeps its English default).
+ */
+function knownLocale(locale, Format) {
+  if (!locale) return null;
+  try {
+    return Format.supportedLocalesOf(locale).length ? locale : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Format a date as a short date string.
  *
  * @param {string} dateStr - ISO date string.
+ * @param {Object} [options]
+ * @param {string} [options.locale] - BCP 47 language tag (e.g. 'de', 'pt-BR').
+ *   Default 'en-US'; an unknown locale keeps the default.
+ * @param {string} [options.timeZone] - IANA time zone. Default 'UTC'; an
+ *   unknown zone keeps the default.
  * @returns {string} Formatted date like "Mar 24, 2026".
  *
  * @example
- * shortDate('2026-03-24T10:30:00Z')   // 'Mar 24, 2026'
- * shortDate('2026-03-24')              // 'Mar 24, 2026'
+ * shortDate('2026-03-24T10:30:00Z')                     // 'Mar 24, 2026'
+ * shortDate('2026-03-24')                                // 'Mar 24, 2026'
+ * shortDate('2026-03-24T10:30:00Z', { locale: 'de' })    // '24. März 2026'
  */
-export function shortDate(dateStr) {
+export function shortDate(dateStr, options = {}) {
   const d = toDate(dateStr);
   if (!d) return '';
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  const locale = knownLocale(options.locale, Intl.DateTimeFormat) || 'en-US';
+  const timeZone = options.timeZone && isTimeZone(options.timeZone) ? options.timeZone : 'UTC';
+  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric', timeZone });
 }
 
 /**
  * Format a date as a date + time string.
  *
+ * With a locale, the same fields (short month, day, year, 24-hour time)
+ * in that language, joined as the language joins them.
+ *
  * @param {string} dateStr - ISO date string.
+ * @param {Object} [options]
+ * @param {string} [options.locale] - BCP 47 language tag (e.g. 'de', 'pt-BR').
+ *   Default 'en-US'; an unknown locale keeps the default.
+ * @param {string} [options.timeZone] - IANA time zone. Default 'UTC'; an
+ *   unknown zone keeps the default.
  * @returns {string} Formatted like "Mar 24, 2026, 10:30".
  *
  * @example
- * dateTime('2026-03-24T10:30:00Z')   // 'Mar 24, 2026, 10:30'
+ * dateTime('2026-03-24T10:30:00Z')                       // 'Mar 24, 2026, 10:30'
+ * dateTime('2026-03-24T10:30:00Z', { locale: 'de' })     // '24. März 2026, 10:30'
+ * dateTime('2026-03-24T10:30:00Z', { timeZone: 'Asia/Bangkok' })  // 'Mar 24, 2026, 17:30'
  */
-export function dateTime(dateStr) {
+export function dateTime(dateStr, options = {}) {
   const d = toDate(dateStr);
   if (!d) return '';
-  const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-  const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' });
+  const locale = knownLocale(options.locale, Intl.DateTimeFormat);
+  const timeZone = options.timeZone && isTimeZone(options.timeZone) ? options.timeZone : 'UTC';
+
+  if (locale) {
+    return d.toLocaleString(locale, {
+      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone,
+    });
+  }
+
+  const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone });
+  const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone });
   return `${date}, ${time}`;
 }
 
@@ -280,21 +322,34 @@ export function dateTime(dateStr) {
  * Format a date as a relative time string.
  *
  * Returns human-friendly strings like "2 hours ago", "3 days ago", "just now".
+ * With a locale, the same units through Intl.RelativeTimeFormat in that
+ * language ("vor 2 Stunden", "gestern", "jetzt"). Units step up at the same
+ * points: seconds under a minute are "now", then minutes, hours, days under
+ * 30, months (30 days) under 12, then years (365 days). A future date is
+ * "now", as in English.
  *
  * @param {string} dateStr - ISO date string.
+ * @param {Object} [options]
+ * @param {string} [options.locale] - BCP 47 language tag (e.g. 'de', 'pt-BR').
+ *   Without one, or with an unknown one, the English strings above.
+ * @param {Date|number} [options.now] - The moment to measure from. Default: now.
  * @returns {string} Relative time string.
  *
  * @example
  * relativeTime('2026-03-24T10:00:00Z')  // '2 hours ago' (if now is 12:00)
  * relativeTime('2026-03-23T10:00:00Z')  // '1 day ago'
  * relativeTime('2026-01-01T00:00:00Z')  // '2 months ago'
+ * relativeTime('2026-03-24T10:00:00Z', { locale: 'de', now: Date.parse('2026-03-24T12:00:00Z') })  // 'vor 2 Stunden'
  */
-export function relativeTime(dateStr) {
+export function relativeTime(dateStr, options = {}) {
   const d = toDate(dateStr);
   if (!d) return '';
 
-  const now = Date.now();
+  const now = options.now == null ? Date.now() : Number(options.now);
   const diff = now - d.getTime();
+
+  const locale = knownLocale(options.locale, Intl.RelativeTimeFormat);
+  if (locale) return relativeIn(locale, diff);
 
   if (diff < 0) return 'just now';
 
@@ -316,6 +371,32 @@ export function relativeTime(dateStr) {
   if (months < 12) return `${months} months ago`;
   if (years === 1) return '1 year ago';
   return `${years} years ago`;
+}
+
+/**
+ * relativeTime() in a language, at the English thresholds.
+ *
+ * @private
+ * @param {string} locale
+ * @param {number} diff - Milliseconds since the date (negative: future).
+ * @returns {string}
+ */
+function relativeIn(locale, diff) {
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+
+  const seconds = Math.floor(Math.max(diff, 0) / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
+
+  if (seconds < 60) return rtf.format(0, 'second');
+  if (minutes < 60) return rtf.format(-minutes, 'minute');
+  if (hours < 24) return rtf.format(-hours, 'hour');
+  if (days < 30) return rtf.format(-days, 'day');
+  if (months < 12) return rtf.format(-months, 'month');
+  return rtf.format(-Math.max(years, 1), 'year'); // 360–364 days: 12 months, not yet 365
 }
 
 // ── Sort comparators ────────────────────────

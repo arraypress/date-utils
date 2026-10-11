@@ -202,6 +202,18 @@ describe('shortDate', () => {
   it('invalid → empty', () => assert.equal(shortDate('not-a-date'), ''));
 });
 
+describe('shortDate — locale and timeZone', () => {
+  it('German', () => assert.equal(shortDate('2026-03-24T10:30:00Z', { locale: 'de' }), '24. März 2026'));
+  it('French', () => assert.equal(shortDate('2026-03-24T10:30:00Z', { locale: 'fr' }), '24 mars 2026'));
+  it('en-US is the default', () => assert.equal(shortDate('2026-03-24T10:30:00Z', { locale: 'en-US' }), 'Mar 24, 2026'));
+  it('time zone moves the day', () => assert.equal(shortDate('2026-03-24T01:00:00Z', { timeZone: 'America/New_York' }), 'Mar 23, 2026'));
+  it('unknown locale and zone keep the defaults', () => {
+    assert.equal(shortDate('2026-03-24T10:30:00Z', { locale: 'xx', timeZone: 'Nowhere/Zone' }), 'Mar 24, 2026');
+    assert.equal(shortDate('2026-03-24T10:30:00Z', { locale: 'not a locale' }), 'Mar 24, 2026');
+  });
+  it('invalid → empty', () => assert.equal(shortDate('not-a-date', { locale: 'de' }), ''));
+});
+
 // ── dateTime ────────────────────────────────
 
 describe('dateTime', () => {
@@ -218,6 +230,22 @@ describe('dateTime', () => {
 
   it('empty → empty', () => assert.equal(dateTime(''), ''));
   it('null → empty', () => assert.equal(dateTime(null), ''));
+});
+
+describe('dateTime — locale and timeZone', () => {
+  it('German', () => assert.equal(dateTime('2026-03-24T10:30:00Z', { locale: 'de' }), '24. März 2026, 10:30'));
+  it('Japanese', () => assert.equal(dateTime('2026-03-24T10:30:00Z', { locale: 'ja' }), '2026年3月24日 10:30'));
+  it('en-US matches the default', () => {
+    assert.equal(dateTime('2026-03-24T10:30:00Z', { locale: 'en-US' }), dateTime('2026-03-24T10:30:00Z'));
+    assert.equal(dateTime('2026-03-24T00:05:00Z', { locale: 'en-US' }), dateTime('2026-03-24T00:05:00Z'));
+  });
+  it('24-hour in every locale', () => assert.equal(dateTime('2026-03-24T00:05:00Z', { locale: 'de' }), '24. März 2026, 00:05'));
+  it('time zone', () => assert.equal(dateTime('2026-03-24T10:30:00Z', { timeZone: 'Asia/Bangkok' }), 'Mar 24, 2026, 17:30'));
+  it('locale and time zone', () => assert.equal(dateTime('2026-03-24T10:30:00Z', { locale: 'de', timeZone: 'Asia/Bangkok' }), '24. März 2026, 17:30'));
+  it('unknown locale and zone keep the defaults', () => {
+    assert.equal(dateTime('2026-03-24T10:30:00Z', { locale: 'xx', timeZone: 'Nowhere/Zone' }), dateTime('2026-03-24T10:30:00Z'));
+  });
+  it('null → empty', () => assert.equal(dateTime(null, { locale: 'de' }), ''));
 });
 
 // ── relativeTime ────────────────────────────
@@ -275,6 +303,39 @@ describe('relativeTime', () => {
 
   it('empty → empty', () => assert.equal(relativeTime(''), ''));
   it('null → empty', () => assert.equal(relativeTime(null), ''));
+});
+
+describe('relativeTime — now and locale', () => {
+  const now = Date.parse('2026-03-24T12:00:00Z');
+  const ago = (ms) => new Date(now - ms).toISOString();
+  const MIN = 60 * 1000;
+  const HOUR = 60 * MIN;
+  const DAY = 24 * HOUR;
+
+  it('now measures from a given moment, in English', () => {
+    assert.equal(relativeTime(ago(2 * HOUR), { now }), '2 hours ago');
+    assert.equal(relativeTime(ago(2 * HOUR), { now: new Date(now) }), '2 hours ago');
+    assert.equal(relativeTime(ago(-MIN), { now }), 'just now');
+  });
+
+  it('German, at the English thresholds', () => {
+    const de = (ms) => relativeTime(ago(ms), { locale: 'de', now });
+    assert.equal(de(30 * 1000), 'jetzt');
+    assert.equal(de(-MIN), 'jetzt');
+    assert.equal(de(90 * 1000), 'vor 1 Minute');
+    assert.equal(de(5 * MIN), 'vor 5 Minuten');
+    assert.equal(de(3 * HOUR), 'vor 3 Stunden');
+    assert.equal(de(36 * HOUR), 'gestern');
+    assert.equal(de(5 * DAY), 'vor 5 Tagen');
+    assert.equal(de(29 * DAY), 'vor 29 Tagen');
+    assert.equal(de(60 * DAY), 'vor 2 Monaten');
+    assert.equal(de(362 * DAY), 'letztes Jahr');
+    assert.equal(de(800 * DAY), 'vor 2 Jahren');
+  });
+
+  it('French', () => assert.equal(relativeTime(ago(2 * HOUR), { locale: 'fr', now }), 'il y a 2 heures'));
+  it('unknown locale → English', () => assert.equal(relativeTime(ago(2 * HOUR), { locale: 'xx', now }), '2 hours ago'));
+  it('null → empty', () => assert.equal(relativeTime(null, { locale: 'de' }), ''));
 });
 
 // ── byDateDesc / byDateAsc ──────────────────

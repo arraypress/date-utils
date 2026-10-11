@@ -82,17 +82,28 @@ Convert a Unix timestamp (seconds) to a SQL-friendly `'YYYY-MM-DD HH:MM:SS'` str
 
 Convert a SQL datetime or ISO string to a Unix timestamp (seconds). Returns `null` for invalid input.
 
-### `shortDate(dateStr)`
+### `shortDate(dateStr, options?)`
 
-Format as `'Mar 24, 2026'`.
+Format as `'Mar 24, 2026'`. Options: `locale` (a BCP 47 tag, default `'en-US'`) and `timeZone` (default `'UTC'`).
 
-### `dateTime(dateStr)`
+### `dateTime(dateStr, options?)`
 
-Format as `'Mar 24, 2026, 10:30'`.
+Format as `'Mar 24, 2026, 10:30'`. Same options as `shortDate`; with a `locale`, the same fields (24-hour time) joined as that language joins them.
 
-### `relativeTime(dateStr)`
+### `relativeTime(dateStr, options?)`
 
-Format as `'2 hours ago'`, `'3 days ago'`, `'just now'`, etc.
+Format as `'2 hours ago'`, `'3 days ago'`, `'just now'`, etc. Options: `locale` — the same units through `Intl.RelativeTimeFormat` in that language — and `now`, the moment to measure from (a `Date` or unix ms; default now).
+
+#### In another language
+
+An unknown locale or time zone keeps the default, so a visitor's language can be passed straight through.
+
+```js
+shortDate('2026-03-24T10:30:00Z', { locale: 'de' })                         // '24. März 2026'
+dateTime('2026-03-24T10:30:00Z', { locale: 'fr', timeZone: 'Europe/Paris' }) // '24 mars 2026, 11:30'
+relativeTime('2026-03-24T08:00:00Z', { locale: 'de' })                       // 'vor 2 Stunden'
+relativeTime('2026-03-23T08:00:00Z', { locale: 'es' })                       // 'ayer'
+```
 
 ### `byDateDesc(a, b)` / `byDateAsc(a, b)`
 
