@@ -1,6 +1,6 @@
 {
   "name": "@arraypress/date-utils",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Date utilities for dashboards — range presets, period formatting, display formatting, and calendar periods in a time zone (DST-safe days, ISO weeks, months, quarters, years) for reports.",
   "type": "module",
   "main": "src/index.js",

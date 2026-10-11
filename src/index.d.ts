@@ -72,4 +72,15 @@ export function byDateAsc(a: DatedItem, b: DatedItem): number;
  */
 export const DATE_PRESETS: readonly Preset[];
 
+/** A second in milliseconds. */
+export const SECOND: 1000;
+/** A minute in milliseconds. */
+export const MINUTE: 60000;
+/** An hour in milliseconds. */
+export const HOUR: 3600000;
+/** A day (24 hours) in milliseconds. */
+export const DAY: 86400000;
+/** A week (7 × 24 hours) in milliseconds. */
+export const WEEK: 604800000;
+
 export * from './zoned.js';

@@ -497,6 +497,25 @@ export const DATE_PRESETS = Object.freeze([
   'custom',
 ]);
 
+// ── Lengths of time ─────────────────────────
+
+/**
+ * Lengths of time in milliseconds, for timeouts, cache lifetimes and
+ * `Date.now()` arithmetic. A day here is always 24 hours: for calendar
+ * days across daylight saving, use `addDays()` and `periodBounds()`.
+ *
+ * @example
+ * import { DAY, HOUR } from '@arraypress/date-utils';
+ *
+ * const expiresAt = Date.now() + 7 * DAY;
+ * setTimeout(refresh, HOUR);
+ */
+export const SECOND = 1000;
+export const MINUTE = 60 * SECOND;
+export const HOUR = 60 * MINUTE;
+export const DAY = 24 * HOUR;
+export const WEEK = 7 * DAY;
+
 // ── Calendar periods in a time zone ────────
 
 export {

@@ -118,6 +118,17 @@ posts.sort(byDateDesc)
 
 Frozen array of every preset key `getDateRange` accepts (`'today'`, `'yesterday'`, `'7d'`, `'30d'`, `'90d'`, `'this_month'`, `'last_month'`, `'this_quarter'`, `'last_quarter'`, `'ytd'`, `'this_year'`, `'last_year'`, `'all'`, `'custom'`). Use to render dropdowns or iterate without duplicating the literal.
 
+### Lengths of time
+
+`SECOND`, `MINUTE`, `HOUR`, `DAY` and `WEEK` in milliseconds, for timeouts, cache lifetimes and `Date.now()` arithmetic. A `DAY` is always 24 hours; for calendar days across daylight saving, see below.
+
+```js
+import { DAY, HOUR } from '@arraypress/date-utils';
+
+const expiresAt = Date.now() + 7 * DAY;
+setTimeout(refresh, HOUR);
+```
+
 ## Calendar periods in a time zone
 
 For sales reports, a "day" is the seller's day, not UTC's. These keep dates

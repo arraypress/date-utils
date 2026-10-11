@@ -12,6 +12,11 @@ import {
   byDateDesc,
   byDateAsc,
   DATE_PRESETS,
+  SECOND,
+  MINUTE,
+  HOUR,
+  DAY,
+  WEEK,
 } from '../src/index.js';
 
 // ── getDateRange ────────────────────────────
@@ -419,5 +424,18 @@ describe('DATE_PRESETS', () => {
 
   it('is frozen', () => {
     assert.ok(Object.isFrozen(DATE_PRESETS));
+  });
+});
+
+// ── Lengths of time ─────────────────────────
+
+describe('lengths of time', () => {
+  it('are in milliseconds', () => {
+    assert.equal(SECOND, 1000);
+    assert.equal(MINUTE, 60 * 1000);
+    assert.equal(HOUR, 60 * 60 * 1000);
+    assert.equal(DAY, 24 * 60 * 60 * 1000);
+    assert.equal(WEEK, 7 * 24 * 60 * 60 * 1000);
+    assert.equal(Date.parse('2026-03-25T00:00:00Z') - Date.parse('2026-03-24T00:00:00Z'), DAY);
   });
 });
