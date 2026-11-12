@@ -9,12 +9,14 @@ export interface DateRange {
 export interface CustomRange {
   from?: string;
   to?: string;
+  /** The moment the presets count from. Default: now. */
+  now?: Date | number;
 }
 
 export function getDateRange(preset: Preset, custom?: CustomRange): DateRange;
 export function getGroupBy(preset: Preset): GroupBy;
 export function formatPeriod(period: string, groupBy: GroupBy): string;
-export function unixToDatetime(ts: number): string | null;
+export function unixToDatetime(ts: number | null | undefined): string | null;
 export function datetimeToUnix(dateStr: string): number | null;
 
 /** Options for `shortDate()` and `dateTime()`. */

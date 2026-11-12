@@ -77,6 +77,7 @@ function offsetAt(ms, tz) {
  * @returns {boolean} True when `Intl` accepts it.
  */
 export function isTimeZone(tz) {
+  if (typeof tz !== 'string' || !tz) return false;
   try {
     formatterFor(tz);
     return true;
@@ -101,7 +102,9 @@ export function localDate(ms, tz) {
 }
 
 /**
- * The instant a local date's midnight happens in a time zone.
+ * The instant a local date starts in a time zone: its midnight, or 01:00 on
+ * the day the clocks go forward at midnight (the first of two midnights
+ * when they go back over one).
  *
  * @param {{ y: number, m: number, d: number }} date The local date.
  * @param {string} tz IANA time zone.
@@ -114,7 +117,14 @@ export function startOfLocalDay(date, tz) {
   const guess = Date.UTC(date.y, date.m - 1, date.d);
   // Twice, so a midnight just after a daylight-saving change lands on the right side.
   const first = guess - offsetAt(guess, tz);
-  return guess - offsetAt(first, tz);
+  const second = guess - offsetAt(first, tz);
+  // Where the clocks go forward at midnight (Cuba, Chile, Lebanon, Egypt) the day starts at 01:00, and one of the two
+  // guesses is an hour before it, in the day before: the earlier guess that is in the day wins.
+  const inDay = [first, second].filter((ms) => {
+    const local = wallClock(ms, tz);
+    return local.y === date.y && local.m === date.m && local.d === date.d;
+  });
+  return inDay.length ? Math.min(...inDay) : second;
 }
 
 /**

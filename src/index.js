@@ -22,8 +22,14 @@ import { isTimeZone } from './zoned.js';
  * Returns `{ from, to }` as ISO strings, or null values for 'all'.
  * Useful for report filters, analytics dashboards, and date pickers.
  *
+ * Every preset is on the UTC calendar, as the strings returned are: "this
+ * month" is the UTC month, whatever zone the machine is in (so a range never
+ * starts after it ends in the hours a zone is a day ahead of or behind UTC).
+ * For a person's own calendar use `periodBounds` with their time zone.
+ *
  * @param {'today'|'yesterday'|'7d'|'30d'|'90d'|'ytd'|'this_month'|'last_month'|'this_quarter'|'last_quarter'|'this_year'|'last_year'|'all'|'custom'} preset - The preset name.
- * @param {{ from?: string, to?: string }} [custom] - Custom date strings (YYYY-MM-DD) when preset is 'custom'.
+ * @param {{ from?: string, to?: string, now?: Date | number }} [custom] - Custom date strings (YYYY-MM-DD) when
+ *   preset is 'custom'; `now` is the moment the presets count from (default: this one).
  * @returns {{ from: string|null, to: string|null }}
  *
  * @example
@@ -35,74 +41,54 @@ import { isTimeZone } from './zoned.js';
  * getDateRange('custom', { from: '2026-01-01', to: '2026-02-28' })
  */
 export function getDateRange(preset, custom = {}) {
-  const now = new Date();
-  const today = now.toISOString().slice(0, 10);
-  const startOf = (d) => `${d.toISOString().slice(0, 10)}T00:00:00Z`;
-  const endOf = (d) => `${d.toISOString().slice(0, 10)}T23:59:59Z`;
-  const pad = (n) => String(n).padStart(2, '0');
+  const now = custom.now === undefined || custom.now === null ? new Date() : new Date(custom.now);
+  // Everything in UTC, as the strings returned are: the calendar here is the one "Z" names, whatever the machine's zone.
+  const [year, month, day] = [now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()];
+  /** @param {number} y @param {number} m Zero-based; may overflow. @param {number} d May overflow. @returns {string} YYYY-MM-DD. */
+  const date = (y, m, d) => new Date(Date.UTC(y, m, d)).toISOString().slice(0, 10);
+  /** @param {number} y @param {number} m @param {number} d @returns {string} */
+  const startOf = (y, m, d) => `${date(y, m, d)}T00:00:00Z`;
+  /** @param {number} y @param {number} m @param {number} d @returns {string} */
+  const endOf = (y, m, d) => `${date(y, m, d)}T23:59:59Z`;
+  const today = endOf(year, month, day);
 
   switch (preset) {
     case 'today':
-      return { from: `${today}T00:00:00Z`, to: `${today}T23:59:59Z` };
+      return { from: startOf(year, month, day), to: today };
 
-    case 'yesterday': {
-      const d = new Date(now);
-      d.setDate(d.getDate() - 1);
-      return { from: startOf(d), to: endOf(d) };
-    }
+    case 'yesterday':
+      return { from: startOf(year, month, day - 1), to: endOf(year, month, day - 1) };
 
-    case '7d': {
-      const d = new Date(now);
-      d.setDate(d.getDate() - 7);
-      return { from: startOf(d), to: endOf(now) };
-    }
+    case '7d':
+      return { from: startOf(year, month, day - 7), to: today };
 
-    case '30d': {
-      const d = new Date(now);
-      d.setDate(d.getDate() - 30);
-      return { from: startOf(d), to: endOf(now) };
-    }
+    case '30d':
+      return { from: startOf(year, month, day - 30), to: today };
 
-    case '90d': {
-      const d = new Date(now);
-      d.setDate(d.getDate() - 90);
-      return { from: startOf(d), to: endOf(now) };
-    }
+    case '90d':
+      return { from: startOf(year, month, day - 90), to: today };
 
     case 'this_month':
-      return { from: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01T00:00:00Z`, to: endOf(now) };
+      return { from: startOf(year, month, 1), to: today };
 
-    case 'last_month': {
-      const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-      const m = now.getMonth() === 0 ? 12 : now.getMonth();
-      const lastDay = new Date(y, m, 0).getDate();
-      return { from: `${y}-${pad(m)}-01T00:00:00Z`, to: `${y}-${pad(m)}-${lastDay}T23:59:59Z` };
-    }
+    case 'last_month':
+      // Day 0 of a month is the last day of the one before.
+      return { from: startOf(year, month - 1, 1), to: endOf(year, month, 0) };
 
-    case 'this_quarter': {
-      const q = Math.floor(now.getUTCMonth() / 3);
-      const m = q * 3 + 1; // 1-indexed month
-      return { from: `${now.getUTCFullYear()}-${pad(m)}-01T00:00:00Z`, to: endOf(now) };
-    }
+    case 'this_quarter':
+      return { from: startOf(year, Math.floor(month / 3) * 3, 1), to: today };
 
     case 'last_quarter': {
-      let q = Math.floor(now.getUTCMonth() / 3) - 1;
-      let y = now.getUTCFullYear();
-      if (q < 0) { q = 3; y--; }
-      const startMonth = q * 3 + 1; // 1-indexed
-      const endMonth = q * 3 + 3;
-      const lastDay = new Date(Date.UTC(y, endMonth, 0)).getUTCDate();
-      return { from: `${y}-${pad(startMonth)}-01T00:00:00Z`, to: `${y}-${pad(endMonth)}-${lastDay}T23:59:59Z` };
+      const first = Math.floor(month / 3) * 3 - 3;
+      return { from: startOf(year, first, 1), to: endOf(year, first + 3, 0) };
     }
 
     case 'this_year':
     case 'ytd':
-      return { from: `${now.getFullYear()}-01-01T00:00:00Z`, to: endOf(now) };
+      return { from: startOf(year, 0, 1), to: today };
 
-    case 'last_year': {
-      const y = now.getFullYear() - 1;
-      return { from: `${y}-01-01T00:00:00Z`, to: `${y}-12-31T23:59:59Z` };
-    }
+    case 'last_year':
+      return { from: startOf(year - 1, 0, 1), to: endOf(year - 1, 11, 31) };
 
     case 'custom':
       return {
@@ -184,7 +170,8 @@ export function formatPeriod(period, groupBy) {
 
   if (groupBy === 'week') {
     const parts = period.split('-');
-    return parts.length >= 2 ? `W${parts[1]}` : period;
+    // "2026-12" and `periodLabel`'s "2026-W12" are both week 12.
+    return parts.length >= 2 ? `W${parts[1].replace(/^W/i, '')}` : period;
   }
 
   // day
@@ -202,7 +189,7 @@ export function formatPeriod(period, groupBy) {
  * MySQL, and other databases.
  *
  * @param {number} ts - Unix timestamp in seconds.
- * @returns {string|null} Datetime string, or null if input is falsy.
+ * @returns {string|null} Datetime string, or null if input is falsy or no number.
  *
  * @example
  * unixToDatetime(1700000000)   // '2023-11-14 22:13:20'
@@ -210,8 +197,9 @@ export function formatPeriod(period, groupBy) {
  * unixToDatetime(null)         // null
  */
 export function unixToDatetime(ts) {
-  if (!ts) return null;
-  return new Date(ts * 1000).toISOString().replace('T', ' ').slice(0, 19);
+  if (!ts || !Number.isFinite(Number(ts))) return null;
+  const date = new Date(Number(ts) * 1000);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString().replace('T', ' ').slice(0, 19);
 }
 
 /**
@@ -225,23 +213,32 @@ export function unixToDatetime(ts) {
  * @example
  * datetimeToUnix('2023-11-14 22:13:20')    // 1700000000
  * datetimeToUnix('2023-11-14T22:13:20Z')   // 1700000000
+ * datetimeToUnix('2023-11-14T17:13:20-05:00') // 1700000000
  * datetimeToUnix(null)                      // null
  */
 export function datetimeToUnix(dateStr) {
-  if (!dateStr || typeof dateStr !== 'string') return null;
-  const d = new Date(dateStr.includes('Z') || dateStr.includes('+') ? dateStr : dateStr + 'Z');
-  if (isNaN(d.getTime())) return null;
-  return Math.floor(d.getTime() / 1000);
+  const d = toDate(dateStr);
+  return d ? Math.floor(d.getTime() / 1000) : null;
 }
 
 // ── Display Formatting ──────────────────────
 
+/** A time zone at the end of a time: "Z", "z", "+05:30", "-0800", "-05". */
+const ZONE = /\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?\s*(z|[+-]\d{2}(?::?\d{2})?)$/i;
+
 /**
- * Ensure a date string is parsed as UTC.
+ * A date string as a Date: in the zone it names, or UTC when it names none.
+ *
+ * @param {string | null | undefined} dateStr - An ISO or SQL datetime, or a date.
+ * @returns {Date | null} The date, or null when it isn't one.
  */
 function toDate(dateStr) {
   if (!dateStr || typeof dateStr !== 'string') return null;
-  const d = new Date(dateStr.includes('Z') || dateStr.includes('+') ? dateStr : dateStr + 'Z');
+  const text = dateStr.trim();
+  const zone = ZONE.exec(text);
+  // "…z" is "…Z"; a zone of hours alone ("-05") gets its minutes, which is how engines read it.
+  const zoned = zone ? text.slice(0, -zone[1].length) + (/^z$/i.test(zone[1]) ? 'Z' : zone[1].length === 3 ? `${zone[1]}:00` : zone[1]) : `${text}Z`;
+  const d = new Date(zoned);
   return isNaN(d.getTime()) ? null : d;
 }
 
@@ -369,7 +366,8 @@ export function relativeTime(dateStr, options = {}) {
   if (days < 30) return `${days} days ago`;
   if (months === 1) return '1 month ago';
   if (months < 12) return `${months} months ago`;
-  if (years === 1) return '1 year ago';
+  // 360 to 364 days are twelve "months" of thirty days and not yet a year of 365.
+  if (years <= 1) return '1 year ago';
   return `${years} years ago`;
 }
 

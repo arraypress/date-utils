@@ -66,6 +66,8 @@ Get `{ from, to }` ISO strings for a named preset:
 
 `'today'`, `'yesterday'`, `'7d'`, `'30d'`, `'90d'`, `'this_month'`, `'last_month'`, `'this_quarter'`, `'last_quarter'`, `'ytd'`/`'this_year'`, `'last_year'`, `'all'`, or `'custom'`.
 
+Every preset is on the UTC calendar, as the strings are (“this month” is the UTC month, whatever zone the machine is in); for a person's own calendar use `periodBounds` with their time zone. `custom.now` (a `Date` or milliseconds) is the moment the presets count from; the default is now.
+
 ### `getGroupBy(preset)`
 
 Get the recommended chart granularity (`'day'`, `'week'`, or `'month'`) for a date preset.
@@ -76,7 +78,7 @@ Format a SQL GROUP BY period string for chart axis labels.
 
 ### `unixToDatetime(ts)`
 
-Convert a Unix timestamp (seconds) to a SQL-friendly `'YYYY-MM-DD HH:MM:SS'` string (UTC). Returns `null` for falsy input.
+Convert a Unix timestamp (seconds) to a SQL-friendly `'YYYY-MM-DD HH:MM:SS'` string (UTC). Returns `null` for falsy input or what is no number.
 
 ### `datetimeToUnix(dateStr)`
 

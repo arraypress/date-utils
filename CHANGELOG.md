@@ -5,6 +5,21 @@ All notable changes to `@arraypress/date-utils` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] — Unreleased
+
+### Added
+
+- `getDateRange(preset, { now })`: the moment the presets count from, for a report as of another time (and for tests).
+
+### Fixed
+
+- `getDateRange` is on the UTC calendar throughout, as the strings it returns are. It read the month and year from the machine's zone and the day from UTC, so in the hours a zone is a day ahead of or behind UTC a range started after it ended (`this_month` at 07:00 on 1 December in Sydney ran from 1 December to 30 November; `ytd` on 1 January likewise), and `last_month`, `last_year` and `this_quarter` disagreed about which month it was.
+- `datetimeToUnix`, `shortDate`, `dateTime`, `relativeTime`: a date with a zone west of UTC (`2026-01-01T00:00:00-05:00`, `-0800`, `-05`) or a lowercase `z` was not a date at all (`null`, `''`).
+- `startOfLocalDay`, `periodBounds`: on the day the clocks go forward at midnight west of UTC (Cuba, Chile; Brazil until 2019) the day started at 23:00 the evening before. It starts at 01:00, its first instant.
+- `relativeTime` without a locale said “0 years ago” for 360 to 364 days.
+- `formatPeriod(label, 'week')` reads the label `periodLabel` writes (“2026-W05” was “WW05”).
+- `unixToDatetime` returns `null` for what is no number instead of throwing; `isTimeZone(undefined)` is `false`.
+
 ## [1.4.0] — 2026-10-12
 
 ### Added
