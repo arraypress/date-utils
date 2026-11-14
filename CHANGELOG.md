@@ -5,6 +5,12 @@ All notable changes to `@arraypress/date-utils` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] — 2026-11-15
+
+### Added
+
+- `relativeDay(dateStr, { now })`: how long ago in days, as people say it ("today", "yesterday", "3 days ago", "a week ago", "2 weeks ago", "a month ago", "a year ago"), for a post's date where `relativeTime()`'s hours are more than the reader needs. A future date is "today". From the Logomarks blog, which used its own copy.
+
 ## [1.5.0] — Unreleased
 
 ### Added

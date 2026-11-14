@@ -372,6 +372,40 @@ export function relativeTime(dateStr, options = {}) {
 }
 
 /**
+ * How long ago a date was, in days and the words people say: "today",
+ * "yesterday", "3 days ago", "a week ago", "2 weeks ago", "a month ago",
+ * "5 months ago", "a year ago". For a post's date, where relativeTime()'s
+ * hours ("14 hours ago") are more than the reader needs. A future date is
+ * "today".
+ *
+ * Days are whole days since the date (24 hours each); weeks under 30 days;
+ * months of 30.44 days under a year; years of 365.25 days.
+ *
+ * @param {string} dateStr - ISO date string.
+ * @param {Object} [options]
+ * @param {Date|number} [options.now] - The moment to measure from. Default: now.
+ * @returns {string} The words, or '' when the date can't be read.
+ *
+ * @example
+ * relativeDay('2026-03-24', { now: Date.parse('2026-03-24T18:00:00Z') })  // 'today'
+ * relativeDay('2026-03-23', { now: Date.parse('2026-03-24T18:00:00Z') })  // 'yesterday'
+ * relativeDay('2026-03-10', { now: Date.parse('2026-03-24T18:00:00Z') })  // '2 weeks ago'
+ */
+export function relativeDay(dateStr, options = {}) {
+  const d = toDate(dateStr);
+  if (!d) return '';
+  const now = options.now == null ? Date.now() : Number(options.now);
+  const days = Math.max(0, Math.floor((now - d.getTime()) / DAY));
+  const ago = (n, unit) => (n === 1 ? `a ${unit} ago` : `${n} ${unit}s ago`);
+  if (days === 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) return ago(Math.floor(days / 7), 'week');
+  if (days < 365) return ago(Math.max(1, Math.floor(days / 30.44)), 'month');
+  return ago(Math.max(1, Math.floor(days / 365.25)), 'year');
+}
+
+/**
  * relativeTime() in a language, at the English thresholds.
  *
  * @private

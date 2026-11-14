@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
-  getDateRange, DATE_PRESETS, datetimeToUnix, shortDate, relativeTime, formatPeriod, unixToDatetime, isTimeZone,
+  getDateRange, DATE_PRESETS, datetimeToUnix, shortDate, relativeTime, relativeDay, formatPeriod, unixToDatetime, isTimeZone,
   startOfLocalDay, localDate, periodBounds, periodLabel, periodStart, HOUR,
 } from '../src/index.js';
 
@@ -136,5 +136,21 @@ describe('labels and small edges', () => {
   it('isTimeZone is false for no zone at all', () => {
     for (const tz of [undefined, null, '', 42]) assert.equal(isTimeZone(/** @type {any} */ (tz)), false);
     assert.equal(isTimeZone('America/Havana'), true);
+  });
+});
+
+describe('relativeDay', () => {
+  const now = Date.UTC(2026, 10, 15, 18);
+  const ago = (days) => new Date(now - days * 24 * HOUR).toISOString();
+
+  it('speaks in days, weeks, months and years', () => {
+    const cases = [[0, 'today'], [1, 'yesterday'], [3, '3 days ago'], [7, 'a week ago'], [20, '2 weeks ago'],
+      [31, 'a month ago'], [150, '4 months ago'], [364, '11 months ago'], [366, 'a year ago'], [800, '2 years ago']];
+    for (const [days, said] of cases) assert.equal(relativeDay(ago(days), { now }), said, String(days));
+  });
+
+  it('reads a future date as today and an unreadable one as nothing', () => {
+    assert.equal(relativeDay(ago(-3), { now }), 'today');
+    assert.equal(relativeDay('not a date', { now }), '');
   });
 });

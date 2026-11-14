@@ -41,6 +41,8 @@ export interface RelativeTimeOptions {
 export function shortDate(dateStr: string, options?: DisplayOptions): string;
 export function dateTime(dateStr: string, options?: DisplayOptions): string;
 export function relativeTime(dateStr: string, options?: RelativeTimeOptions): string;
+/** How long ago, in days and spoken words: 'today', 'yesterday', '3 days ago', 'a week ago', 'a month ago', 'a year ago'. */
+export function relativeDay(dateStr: string, options?: { now?: Date | number }): string;
 
 /**
  * Item with a date on either `item.data.date` (Astro CollectionEntry

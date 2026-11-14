@@ -16,7 +16,7 @@ npm install @arraypress/date-utils
 import {
   getDateRange, getGroupBy, formatPeriod,
   unixToDatetime, datetimeToUnix,
-  shortDate, dateTime, relativeTime,
+  shortDate, dateTime, relativeTime, relativeDay,
   byDateDesc, byDateAsc, DATE_PRESETS,
 } from '@arraypress/date-utils';
 
@@ -106,6 +106,10 @@ dateTime('2026-03-24T10:30:00Z', { locale: 'fr', timeZone: 'Europe/Paris' }) // 
 relativeTime('2026-03-24T08:00:00Z', { locale: 'de' })                       // 'vor 2 Stunden'
 relativeTime('2026-03-23T08:00:00Z', { locale: 'es' })                       // 'ayer'
 ```
+
+### `relativeDay(dateStr, options?)`
+
+How long ago in days, as people say it: `'today'`, `'yesterday'`, `'3 days ago'`, `'a week ago'`, `'2 weeks ago'`, `'a month ago'`, `'a year ago'`. For a post's date, where hours are more than the reader needs. A future date is `'today'`. Option: `now` (a `Date` or unix ms).
 
 ### `byDateDesc(a, b)` / `byDateAsc(a, b)`
 
